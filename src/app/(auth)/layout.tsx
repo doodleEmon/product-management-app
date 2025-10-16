@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
 import ReduxProvider from "@/redux/ReduxProvider";
 import { Slide, ToastContainer } from "react-toastify";
+import PublicLayout from "@/components/PublicLayout";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -30,20 +31,22 @@ export default function RootLayout({
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
                 <ReduxProvider>
-                    {children}
-                    <ToastContainer
-                        position="top-right"
-                        autoClose={4000}
-                        hideProgressBar={false}
-                        newestOnTop={false}
-                        closeOnClick={false}
-                        rtl={false}
-                        pauseOnFocusLoss
-                        draggable
-                        pauseOnHover
-                        theme="light"
-                        transition={Slide}
-                    />
+                    <PublicLayout>
+                        {children}
+                        <ToastContainer
+                            position="top-right"
+                            autoClose={4000}
+                            hideProgressBar={false}
+                            newestOnTop={false}
+                            closeOnClick={false}
+                            rtl={false}
+                            pauseOnFocusLoss
+                            draggable
+                            pauseOnHover
+                            theme="light"
+                            transition={Slide}
+                        />
+                    </PublicLayout>
                 </ReduxProvider>
             </body>
         </html>
