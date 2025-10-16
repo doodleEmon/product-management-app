@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
-import { Provider } from "react-redux";
-import { store } from "@/redux/store";
 import ReduxProvider from "@/redux/ReduxProvider";
 import { Slide, ToastContainer } from "react-toastify";
 
@@ -17,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: "Login for access this website",
-    description: "This is login/signin page.",
+    title: "Products page",
+    description: "This is products page",
 };
 
 export default function RootLayout({
