@@ -14,7 +14,6 @@ import {
 import createWebStorage from 'redux-persist/lib/storage/createWebStorage';
 import AuthReducer from '@/redux/slices/auth';
 
-// Create noop storage for server-side
 const createNoopStorage = (): WebStorage => {
     return {
         getItem(_key: string) {
@@ -33,21 +32,18 @@ const storage = typeof window !== 'undefined'
     ? createWebStorage('local')
     : createNoopStorage();
 
-// Root reducer
 const rootReducer = combineReducers({
     auth: AuthReducer,
 });
 
-// Persist config
 const persistConfig = {
     key: 'root',
     storage,
-    whitelist: ['auth'], // only auth will be persisted
+    whitelist: ['auth'],
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
-// Store setup
 export const makeStore = () => {
     const store = configureStore({
         reducer: persistedReducer,
@@ -59,7 +55,6 @@ export const makeStore = () => {
             }),
     });
 
-    // attach persistor to the store (typed as any to avoid TypeScript error)
     (store as any).__persistor = persistStore(store);
     return store;
 };

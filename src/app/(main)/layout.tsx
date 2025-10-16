@@ -4,6 +4,7 @@ import "../globals.css";
 import ReduxProvider from "@/redux/ReduxProvider";
 import { Slide, ToastContainer } from "react-toastify";
 import ProtectedLayout from "@/components/ProtectedLayout";
+import Header from "@/components/Header";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
@@ -32,6 +33,7 @@ export default function RootLayout({
             >
                 <ReduxProvider>
                     <ProtectedLayout>
+                        <Header />
                         {children}
                         <ToastContainer
                             position="top-right"
