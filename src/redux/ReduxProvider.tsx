@@ -1,32 +1,30 @@
-'use client'
+'use client';
 
-import React, { useEffect } from 'react'
-import { Provider, useDispatch } from 'react-redux'
-import { AppDispatch, store } from '@/redux/store'
+import { useRef } from 'react';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
+import { makeStore, AppStore } from '@/redux/store';
 
-export default function ReduxProvider({ children }: { children: React.ReactNode }) {
+export default function ReduxProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const storeRef = useRef<AppStore | undefined>(undefined);
+  if (!storeRef.current) {
+    storeRef.current = makeStore();
+  }
 
-    // function HydrateUser() {
-    //     const dispatch = useDispatch<AppDispatch>();
+  const persistor = (storeRef.current as any)?.__persistor;
 
-    //     useEffect(() => {
-    //         const loadUser = async () => {
-    //             try {
-    //                 await dispatch(checkAuth());
-    //             } catch {
-    //                 dispatch(setUser(null));
-    //             }
-    //         };
-    //         loadUser();
-    //     }, [dispatch]);
-
-    //     return null;
-    // }
-
-    return (
-        <Provider store={store}>
-            {/* <HydrateUser /> */}
-            {children}
-        </Provider>
-    )
+  return (
+    <Provider store={storeRef.current}>
+      <PersistGate
+        loading={null}
+        persistor={persistor}
+      >
+        {children}
+      </PersistGate>
+    </Provider>
+  );
 }

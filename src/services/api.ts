@@ -8,7 +8,6 @@ export async function apiCall<T>(
     body?: any,
     token?: string
 ): Promise<T> {
-    console.log("🚀 ~ apiCall ~ endpoint:", baseUrl,endpoint)
 
     const headers: Record<string, string> = {
         "Content-Type": "application/json",
