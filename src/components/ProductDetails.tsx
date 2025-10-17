@@ -18,6 +18,7 @@ export function ProductDetails() {
     const { authToken } = useSelector((state: RootState) => state.auth);
     const { product, currentPage, limit } = useSelector((state: RootState) => state.product);
     const [toDelete, setToDelete] = useState<{ id: string; name?: string } | null>(null);
+    const [selectedImage, setSelectedImage] = useState<string>('/placeholder.png');
 
     useEffect(() => {
         if (!slug) return;
@@ -25,7 +26,15 @@ export function ProductDetails() {
     }, [dispatch, slug, authToken]);
 
     const images = product?.images?.length ? product.images : ['/placeholder.png'];
-    const [selectedImage, setSelectedImage] = useState(images[0]);
+
+    // Whenever product changes, reset selected image
+    useEffect(() => {
+        if (product?.images?.length) {
+            setSelectedImage(product.images[0]);
+        } else {
+            setSelectedImage('/placeholder.png');
+        }
+    }, [product]);
 
     const onConfirmDelete = async () => {
         if (!toDelete) return;
