@@ -13,6 +13,7 @@ import CategorySidebar from '@/components/CategorySidebar';
 import Loader from '@/components/Loader';
 import { FiMenu, FiX } from 'react-icons/fi';
 import Link from 'next/link';
+import { toast } from 'react-toastify';
 
 const ProductsPage: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -39,10 +40,28 @@ const ProductsPage: React.FC = () => {
 
     const onConfirmDelete = async () => {
         if (!toDelete) return;
-        await dispatch(deleteProduct({ id: toDelete.id, token: authToken as string }));
-        const offset = (currentPage - 1) * limit;
-        dispatch(getProducts({ offset, limit, categoryId: selectedCategory ?? undefined, token: authToken as string }));
-        setToDelete(null);
+
+        const result = await dispatch(
+            deleteProduct({ id: toDelete.id, token: authToken as string })
+        );
+
+        if (deleteProduct.fulfilled.match(result)) {
+            toast.success('Product deleted successfully!');
+
+            const offset = (currentPage - 1) * limit;
+            dispatch(
+                getProducts({
+                    offset,
+                    limit,
+                    categoryId: selectedCategory ?? undefined,
+                    token: authToken as string,
+                })
+            );
+
+            setToDelete(null);
+        } else {
+            toast.error('Failed to delete product.');
+        }
     };
 
     return (
@@ -96,8 +115,12 @@ const ProductsPage: React.FC = () => {
                 {/* Header Section */}
                 <div className="mb-6 flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
                     <h1 className="text-2xl font-semibold hidden lg:block">Products</h1>
-                    
+
                     <div className="flex flex-col sm:flex-row gap-4 flex-1">
+                        <Link href={'/products/create'} className='hover:bg-[#4E6E5D] text-[#4E6E5D] border border-[#4E6E5D] hover:text-white px-4 py-1.5 cursor-pointer rounded-lg flex items-center justify-center gap-x-2 font-semibold transition-colors duration-200 whitespace-nowrap lg:hidden'>
+                            <span className='text-base'>+</span> Create
+                        </Link>
+
                         <div className="flex-1 min-w-0">
                             <input
                                 value={query}
@@ -106,8 +129,8 @@ const ProductsPage: React.FC = () => {
                                 className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4E6E5D] focus:border-transparent"
                             />
                         </div>
-                        
-                        <Link href={'/products/create'}  className='hover:bg-[#4E6E5D] text-[#4E6E5D] border border-[#4E6E5D] hover:text-white px-4 py-1.5 cursor-pointer rounded-lg flex items-center gap-x-2 font-semibold transition-colors duration-200 whitespace-nowrap'>
+
+                        <Link href={'/products/create'} className='hover:bg-[#4E6E5D] text-[#4E6E5D] border border-[#4E6E5D] hover:text-white px-4 cursor-pointer rounded-lg hidden lg:flex items-center justify-center gap-x-2 font-semibold transition-colors duration-200 whitespace-nowrap'>
                             <span className='text-base'>+</span> Create
                         </Link>
                     </div>

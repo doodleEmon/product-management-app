@@ -1,9 +1,10 @@
+import { ProductDetails } from '@/components/ProductDetails'
 import React from 'react'
 
-export default function ProductDetails() {
+export default function ProductDetailsPage() {
   return (
     <div>
-      details page
+      <ProductDetails />
     </div>
   )
 }
