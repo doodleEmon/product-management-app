@@ -10,7 +10,7 @@ const initialState: ProductState = {
     searchQuery: '',
     currentPage: 1,
     total: 0,
-    limit: 10,
+    limit: 12,
 };
 
 const productsSlice = createSlice({

@@ -11,6 +11,7 @@ import ProductCard from './ProductCard';
 import Pagination from '@/components/Pagination';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import CategorySidebar from '@/components/CategorySidebar';
+import Loader from '@/components/Loader';
 
 const ProductsPage: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
@@ -68,7 +69,9 @@ const ProductsPage: React.FC = () => {
                     </div>
                 </div>
 
-                {loading && <p>Loading...</p>}
+                {loading && <div>
+                    <Loader />
+                </div>}
                 {error && <p className="text-red-600">{error}</p>}
 
                 {!loading && products.length === 0 && <p>No products found.</p>}
