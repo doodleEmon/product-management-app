@@ -46,7 +46,7 @@ export default function Header() {
     }, [lastScrollY]);
 
     return (
-        <header className={`flex items-center justify-between px-4 lg:px-10 py-4 bg-[#4E6E5D] fixed top-0 left-0 w-full z-50 transition-transform duration-300 ${
+        <header className={`flex items-center justify-between px-4 lg:px-10 h-16 bg-[#4E6E5D] fixed top-0 left-0 w-full z-50 transition-transform duration-300 ${
             isVisible ? 'translate-y-0' : '-translate-y-full'
         }`}>
             <Link href={'/products'} className='text-2xl font-bold capitalize text-white'>

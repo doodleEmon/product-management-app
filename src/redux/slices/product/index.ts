@@ -5,8 +5,10 @@ import { ProductState } from '@/types/products';
 const initialState: ProductState = {
     products: [],
     product: null,
-    loading: false,
+    loading: 'idle',
+    searchLoading: 'idle',
     error: null,
+    searchError: null,
     searchQuery: '',
     currentPage: 1,
     total: 0,
@@ -27,19 +29,26 @@ const productsSlice = createSlice({
     extraReducers: (builder) => {
         builder
             // get all products
-            .addCase(getProducts.pending, (state) => { state.loading = true; })
+            .addCase(getProducts.pending, (state) => { 
+                state.loading = 'pending';
+                state.error = null;
+            })
             .addCase(getProducts.fulfilled, (state, action) => {
-                state.loading = false;
+                state.loading = 'succeeded';
                 state.products = action.payload;
             })
             .addCase(getProducts.rejected, (state, action) => {
-                state.loading = false;
+                state.loading = 'failed';
                 state.error = action.error.message ?? 'Failed to fetch products';
             })
 
             // get searched products
+            .addCase(searchProducts.pending, (state, action) => {
+                state.searchLoading = 'pending';
+                state.searchError = null;
+            })
             .addCase(searchProducts.fulfilled, (state, action) => {
-                state.loading = false;
+                state.searchLoading = 'succeeded';
                 state.products = action.payload;
             })
 

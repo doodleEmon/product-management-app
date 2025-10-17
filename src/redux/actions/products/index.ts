@@ -1,4 +1,4 @@
-import { Product } from '@/types/products';
+import { Product, ProductFormData } from '@/types/products';
 import { apiCall } from "@/services/api";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 
@@ -37,7 +37,7 @@ export const createProduct = createAsyncThunk(
         productsData,
         token
     }: {
-        productsData: Omit<Product, 'id' | 'slug' | 'category'>;
+        productsData: ProductFormData;
         token: string
     }, thunkAPI) => {
         try {

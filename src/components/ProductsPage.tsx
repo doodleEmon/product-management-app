@@ -17,6 +17,7 @@ import Link from 'next/link';
 const ProductsPage: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
     const { products, loading, error, currentPage, limit } = useSelector((state: RootState) => state.product);
+    console.log("🚀 ~ ProductsPage ~ products:", products.length);
     const { authToken } = useSelector((state: RootState) => state.auth);
     const [query, setQuery] = useState('');
     const debouncedQuery = useDebounce(query, 400);
@@ -60,7 +61,7 @@ const ProductsPage: React.FC = () => {
 
             {/* Sidebar - Mobile Overlay and Desktop Fixed */}
             <div className={`
-                ${showMobileSidebar ? 'fixed top-10 inset-0 z-40 bg-black/50' : 'hidden'} 
+                ${showMobileSidebar ? 'fixed inset-0 z-40 bg-black/50' : 'hidden'} 
                 lg:relative lg:block
             `}>
                 <div className={`
@@ -68,11 +69,11 @@ const ProductsPage: React.FC = () => {
                     bg-white p-4 lg:p-0 transition-transform duration-300
                     ${showMobileSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
                 `}>
-                    <div className="flex items-center justify-between lg:hidden mb-4">
+                    <div className="flex items-center justify-between lg:hidden mb-4 pt-16">
                         <h2 className="text-lg font-semibold">Filters</h2>
                         <button
                             onClick={() => setShowMobileSidebar(false)}
-                            className="p-1"
+                            className="p-1 cursor-pointer"
                         >
                             <FiX size={24} />
                         </button>
@@ -103,7 +104,7 @@ const ProductsPage: React.FC = () => {
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                                 placeholder="Search products by name..."
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4E6E5D] focus:border-transparent"
+                                className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4E6E5D] focus:border-transparent"
                             />
                         </div>
                         
@@ -114,7 +115,7 @@ const ProductsPage: React.FC = () => {
                 </div>
 
                 {/* Loading State */}
-                {loading && (
+                {loading === 'pending' && (
                     <div className='flex justify-center items-center h-[70%] py-8'>
                         <Loader />
                     </div>
@@ -128,7 +129,7 @@ const ProductsPage: React.FC = () => {
                 )}
 
                 {/* Empty State */}
-                {!loading && products.length === 0 && (
+                {loading === 'succeeded' && products.length === 0 && (
                     <div className="text-center py-12 text-gray-500">
                         <p className="text-lg">No products found.</p>
                         <p className="text-sm mt-2">Try adjusting your search or filters</p>
@@ -136,7 +137,7 @@ const ProductsPage: React.FC = () => {
                 )}
 
                 {/* Products Grid */}
-                {!loading && products.length > 0 && (
+                {loading === 'succeeded' && products.length > 0 && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
                         {products.map((p) => (
                             <ProductCard

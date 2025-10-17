@@ -34,9 +34,9 @@ export default function RootLayout({
                 <ReduxProvider>
                     <ProtectedLayout>
                         <Header />
-                        <div className="mt-[calc(100vh-33rem)]">
+                        <main className="pt-16">
                             {children}
-                        </div>
+                        </main>
                         <ToastContainer
                             position="top-right"
                             autoClose={4000}
