@@ -107,8 +107,8 @@ const ProductsPage: React.FC = () => {
                             />
                         </div>
                         
-                        <Link href={'/products/create'}  className='hover:bg-[#4E6E5D] text-[#4E6E5D] border-2 border-[#4E6E5D] hover:text-white px-4 py-2 cursor-pointer rounded-lg flex items-center gap-x-2 font-semibold transition-colors duration-200 whitespace-nowrap'>
-                            <span className='text-lg'>+</span> Create
+                        <Link href={'/products/create'}  className='hover:bg-[#4E6E5D] text-[#4E6E5D] border border-[#4E6E5D] hover:text-white px-4 py-1.5 cursor-pointer rounded-lg flex items-center gap-x-2 font-semibold transition-colors duration-200 whitespace-nowrap'>
+                            <span className='text-base'>+</span> Create
                         </Link>
                     </div>
                 </div>

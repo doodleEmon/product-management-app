@@ -33,7 +33,7 @@ export interface ProductFormData {
     name: string,
     description: string,
     images: string[],
-    price: number,
+    price: number | string,
     categoryId: string
 }
 

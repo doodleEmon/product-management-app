@@ -6,11 +6,14 @@ import { createProduct, updateProduct } from '@/redux/actions/products';
 import { AppDispatch, RootState } from '@/redux/store';
 import { Category } from '@/types/categories';
 import { Product, ProductErrors, ProductFormData } from '@/types/products';
+import { useImageUpload } from '@/hooks/useImageUpload';
 import { useRouter } from 'next/navigation';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CgSpinner } from 'react-icons/cg';
+import { MdDelete, MdCloudUpload } from 'react-icons/md';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
+import Image from 'next/image';
 
 interface ProductFormProps {
     product?: Product | null;
@@ -23,19 +26,76 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
     const [formData, setFormData] = useState<ProductFormData>({
         name: product?.name || '',
         description: product?.description || '',
-        price: product?.price || 0,
+        price: product?.price || '',
         categoryId: product?.category.id || '',
-        images: product?.images || ['']
+        images: product?.images || []
     });
 
     const [errors, setErrors] = useState<ProductErrors>({});
     const [touched, setTouched] = useState<Record<string, boolean>>({});
+    const [imagePreviews, setImagePreviews] = useState<string[]>(product?.images || []);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Use the image upload hook
+    const { uploadMultipleImages, uploading: imageUploading, error: uploadError } = useImageUpload();
 
     const dispatch = useDispatch<AppDispatch>();
     const { authToken } = useSelector((state: RootState) => state.auth);
-    const { loading, createLoading, updateLoading } = useSelector((state: RootState) => state.product);
+    const { createLoading, updateLoading } = useSelector((state: RootState) => state.product);
     const { categories } = useSelector((state: RootState) => state.category);
     const router = useRouter();
+
+    // Handle file selection and upload
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        try {
+            // Convert FileList to array
+            const fileArray = Array.from(files);
+
+            // Upload images using the service
+            const uploadedUrls = await uploadMultipleImages(fileArray);
+
+            // Update form data with new image URLs
+            const newImages = [...formData.images, ...uploadedUrls];
+            setFormData(prev => ({
+                ...prev,
+                images: newImages
+            }));
+
+            // Update image previews
+            setImagePreviews(prev => [...prev, ...uploadedUrls]);
+
+            toast.success('Images uploaded successfully!');
+
+            // Reset file input
+            if (fileInputRef.current) {
+                fileInputRef.current.value = '';
+            }
+        } catch (error) {
+            // Error is already handled in the hook, just show toast
+            toast.error(uploadError || 'Failed to upload images. Please try again.');
+        }
+    };
+
+    // Remove image
+    const removeImage = (index: number) => {
+        const newImages = formData.images.filter((_, i) => i !== index);
+        const newPreviews = imagePreviews.filter((_, i) => i !== index);
+
+        setFormData(prev => ({
+            ...prev,
+            images: newImages
+        }));
+        setImagePreviews(newPreviews);
+        toast.success('Image removed successfully!');
+    };
+
+    // Trigger file input click
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
 
     // Fixed validation function
     const validateField = (name: string, value: any): string => {
@@ -53,7 +113,6 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
                 return '';
 
             case 'price':
-                // For price, we need to handle both string and number
                 const priceValue = value;
                 if (priceValue === '' || priceValue === null || priceValue === undefined) {
                     return 'Price is required!';
@@ -69,13 +128,8 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
                 return '';
 
             case 'images':
-                // Handle images array validation
-                if (Array.isArray(value)) {
-                    const firstImage = value[0] || '';
-                    if (!firstImage.trim()) return 'Image URL is required!';
-                    if (firstImage.trim() && !/^https?:\/\/.+\..+/.test(firstImage)) {
-                        return 'Please enter a valid image URL!';
-                    }
+                if (Array.isArray(value) && value.length === 0) {
+                    return 'At least one image is required!';
                 }
                 return '';
 
@@ -88,7 +142,6 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
         const newErrors: ProductErrors = {};
         let isValid = true;
 
-        // Validate each field individually to handle different data types properly
         const nameError = validateField('name', formData.name);
         if (nameError) {
             newErrors.name = nameError;
@@ -136,14 +189,7 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
 
-        if (name === 'images') {
-            // Handle images array - update first image
-            setFormData(prev => ({
-                ...prev,
-                images: [value]
-            }));
-        } else if (name === 'price') {
-            // Handle price input - always store as number
+        if (name === 'price') {
             setFormData(prev => ({
                 ...prev,
                 price: value === '' ? 0 : Number(value)
@@ -152,7 +198,6 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
             setFormData(prev => ({ ...prev, [name]: value }));
         }
 
-        // Clear error when user starts typing
         if (errors[name as keyof ProductErrors]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
         }
@@ -161,7 +206,6 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Mark all fields as touched
         const allTouched = Object.keys(formData).reduce((acc, key) => {
             acc[key] = true;
             return acc;
@@ -174,13 +218,12 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
             return;
         }
 
-        // Prepare data for backend - ensure price is a number
         const productData = {
             name: formData.name.trim(),
             description: formData.description.trim(),
-            price: Number(formData.price), // Ensure it's a number
+            price: Number(formData.price),
             categoryId: formData.categoryId,
-            images: formData.images.filter(img => img.trim() !== ''),
+            images: formData.images,
         };
 
         try {
@@ -224,7 +267,7 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
 
     return (
         <div className="max-w-2xl mx-auto p-6">
-            <div className="bg-[#1D232A] rounded-lg p-6 shadow-lg">
+            <div className="bg-[#282c31] rounded-lg p-6 shadow-lg">
                 <h2 className="text-2xl font-bold text-white mb-6">
                     {isEditMode ? 'Edit Product' : 'Create New Product'}
                 </h2>
@@ -309,19 +352,71 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
                         </p>
                     </div>
 
-                    {/* Image URL */}
+                    {/* Image Previews */}
+                    {imagePreviews.length > 0 && (
+                        <div>
+                            <label className="label text-sm text-white mb-2">Image Previews</label>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                                {imagePreviews.map((imageUrl, index) => (
+                                    <div key={index} className="relative">
+                                        <Image
+                                            src={imageUrl}
+                                            alt={`Preview ${index + 1}`}
+                                            className="w-full h-32 object-cover rounded-lg border border-gray-600"
+                                            height={1000}
+                                            width={1000}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => removeImage(index)}
+                                            className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full p-1 transition-opacity"
+                                        >
+                                            <MdDelete size={16} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Image Upload */}
                     <div>
-                        <label className="label text-sm mb-1 text-white">Image URL *</label>
+                        <label className="label text-sm text-white">Product Images *</label>
+
+                        {/* Hidden file input */}
                         <input
-                            type="text"
-                            name="images"
-                            className={`input py-2.5 px-4 rounded-md mt-1 focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${shouldShowError('images') ? 'border-red-500' : 'border-gray-500'
-                                }`}
-                            placeholder="https://example.com/image.jpg"
-                            value={formData.images[0] || ''}
-                            onChange={handleChange}
-                            onBlur={() => handleBlur('images')}
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleFileSelect}
+                            accept="image/*"
+                            multiple
+                            className="hidden"
                         />
+
+                        {/* Upload button */}
+                        <button
+                            type="button"
+                            onClick={handleUploadClick}
+                            disabled={imageUploading}
+                            className="w-full py-3 px-4 border-2 border-dashed border-gray-500 rounded-lg text-center hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {imageUploading ? (
+                                <div className="flex items-center justify-center gap-2 text-gray-400">
+                                    <CgSpinner size={20} className="animate-spin" />
+                                    <span>Uploading images...</span>
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-center gap-2 text-gray-400">
+                                    <MdCloudUpload size={24} />
+                                    <span>Click to upload images or drag and drop</span>
+                                </div>
+                            )}
+                        </button>
+
+                        <p className="text-xs text-gray-400 mt-2">
+                            Supported formats: JPG, PNG, GIF, WEBP. Max size: 10MB per image.
+                        </p>
+
                         <p className={`text-sm text-red-500 mt-2 ${shouldShowError('images') ? 'block' : 'hidden'}`}>
                             {errors.images}
                         </p>
@@ -330,7 +425,7 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
                     {/* Submit Button */}
                     <button
                         type="submit"
-                        disabled={createLoading === 'pending' || updateLoading === 'pending'}
+                        disabled={createLoading === 'pending' || updateLoading === 'pending' || imageUploading}
                         className="w-full p-3 mt-6 bg-[#4E6E5D] rounded text-base cursor-pointer text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {createLoading === 'pending' || updateLoading === 'pending' ? (
