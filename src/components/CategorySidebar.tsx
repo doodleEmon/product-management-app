@@ -11,7 +11,6 @@ const CategorySidebar: React.FC<{ selectedCategory: string | null; onSelectCateg
     const dispatch = useDispatch<AppDispatch>();
     const { authToken } = useSelector((state: RootState) => state.auth);
     const { categories } = useSelector((state: RootState) => state.category);
-    console.log("🚀 ~ CategorySidebar ~ categories:", categories)
 
     useEffect(() => {
         if (!categories.length && authToken) {
@@ -20,7 +19,7 @@ const CategorySidebar: React.FC<{ selectedCategory: string | null; onSelectCateg
     }, [categories.length, authToken, dispatch]);
 
     return (
-        <div className="border rounded p-4">
+        <div className="border rounded p-4 w-full">
             <div className="flex items-center justify-between mb-4">
                 <h3 className="font-semibold">Categories</h3>
                 <button onClick={onClear} className="text-sm text-blue-600">Clear</button>

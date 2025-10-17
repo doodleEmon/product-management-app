@@ -3,7 +3,7 @@ import React from 'react'
 
 export default function Products() {
   return (
-    <div>
+    <div className='mt-[calc(100vh-34rem)]'>
       <ProductsPage />
     </div>
   )
