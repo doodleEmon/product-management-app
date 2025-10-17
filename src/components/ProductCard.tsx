@@ -8,9 +8,9 @@ import Image from 'next/image';
 const ProductCard: React.FC<{ product: Product; onDelete: () => void }> = ({ product, onDelete }) => {
   return (
     <div className="border border-gray-600 hover:border-red-300 rounded p-4 shadow-sm hover:shadow-xl flex flex-col transition-all duration-150">
-      <div className="h-40 w-full mb-3 bg-gray-100 flex items-center justify-center overflow-hidden rounded">
+      <div className="h-40 w-full mb-3 bg-gray-100 flex items-center justify-center overflow-hidden rounded object-contain">
         <Link href={`/products/${product.slug}`}>
-          <Image src={product.images?.[0] ?? '/placeholder.png'} alt={product.name} className="h-full object-cover" height={1000} width={1000} />
+          <Image src={product.images?.[0] ?? '/placeholder.png'} alt={product.name} className="size-full" height={1000} width={1000} />
         </Link>
       </div>
       <Link href={`/products/${product.slug}`} className="font-medium text-lg line-clamp-1 hover:text-[#436a55]">{product.name}</Link>

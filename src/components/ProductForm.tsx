@@ -36,41 +36,45 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
     const { categories } = useSelector((state: RootState) => state.category);
     const router = useRouter();
 
-    // Validation function
+    // Fixed validation function
     const validateField = (name: string, value: any): string => {
         switch (name) {
             case 'name':
-                if (!value.trim()) return 'Product name is required!';
-                if (value.trim().length < 2) return 'Product name must be at least 2 characters!';
+                const nameStr = String(value || '');
+                if (!nameStr.trim()) return 'Product name is required!';
+                if (nameStr.trim().length < 2) return 'Product name must be at least 2 characters!';
                 return '';
 
             case 'description':
-                if (!value.trim()) return 'Description is required!';
-                if (value.trim().length < 10) return 'Description must be at least 10 characters!';
+                const descStr = String(value || '');
+                if (!descStr.trim()) return 'Description is required!';
+                if (descStr.trim().length < 10) return 'Description must be at least 10 characters!';
                 return '';
 
             case 'price':
-                if (!value.trim()) return 'Price is required!';
-                if (isNaN(Number(value)) || Number(value) <= 0) return 'Price must be a positive number!';
+                // For price, we need to handle both string and number
+                const priceValue = value;
+                if (priceValue === '' || priceValue === null || priceValue === undefined) {
+                    return 'Price is required!';
+                }
+                if (isNaN(Number(priceValue)) || Number(priceValue) <= 0) {
+                    return 'Price must be a positive number!';
+                }
                 return '';
 
-            case 'categoryId': // Changed from category
-                if (!value.trim()) return 'Category is required!';
+            case 'categoryId':
+                const categoryStr = String(value || '');
+                if (!categoryStr.trim()) return 'Category is required!';
                 return '';
 
             case 'images':
-                // Validate first image URL if provided
-                if (value[0] && !/^https?:\/\/.+\..+/.test(value[0])) {
-                    return 'Please enter a valid image URL!';
-                }
-                return '';
-
-            case 'stock':
-                if (value && (isNaN(Number(value)) || Number(value) < 0)) {
-                    return 'Stock must be a non-negative number!';
-                }
-                if (value && !Number.isInteger(Number(value))) {
-                    return 'Stock must be a whole number!';
+                // Handle images array validation
+                if (Array.isArray(value)) {
+                    const firstImage = value[0] || '';
+                    if (!firstImage.trim()) return 'Image URL is required!';
+                    if (firstImage.trim() && !/^https?:\/\/.+\..+/.test(firstImage)) {
+                        return 'Please enter a valid image URL!';
+                    }
                 }
                 return '';
 
@@ -83,7 +87,36 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
         const newErrors: ProductErrors = {};
         let isValid = true;
 
-        // const error = validateField(key, formData[key as keyof ProductFormData]);
+        // Validate each field individually to handle different data types properly
+        const nameError = validateField('name', formData.name);
+        if (nameError) {
+            newErrors.name = nameError;
+            isValid = false;
+        }
+
+        const descriptionError = validateField('description', formData.description);
+        if (descriptionError) {
+            newErrors.description = descriptionError;
+            isValid = false;
+        }
+
+        const priceError = validateField('price', formData.price);
+        if (priceError) {
+            newErrors.price = priceError;
+            isValid = false;
+        }
+
+        const categoryError = validateField('categoryId', formData.categoryId);
+        if (categoryError) {
+            newErrors.categoryId = categoryError;
+            isValid = false;
+        }
+
+        const imagesError = validateField('images', formData.images);
+        if (imagesError) {
+            newErrors.images = imagesError;
+            isValid = false;
+        }
 
         setErrors(newErrors);
         return isValid;
@@ -106,7 +139,13 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
             // Handle images array - update first image
             setFormData(prev => ({
                 ...prev,
-                images: [value] // Only using single image for simplicity
+                images: [value]
+            }));
+        } else if (name === 'price') {
+            // Handle price input - always store as number
+            setFormData(prev => ({ 
+                ...prev, 
+                price: value === '' ? 0 : Number(value) 
             }));
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
@@ -134,21 +173,28 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
             return;
         }
 
-        // Prepare data for backend
+        // Prepare data for backend - ensure price is a number
         const productData = {
-            name: formData.name,
-            description: formData.description,
-            price: formData.price,
-            categoryId: formData.categoryId, // Changed from category
-            images: formData.images.filter(img => img.trim() !== ''), // Filter out empty image strings
+            name: formData.name.trim(),
+            description: formData.description.trim(),
+            price: Number(formData.price), // Ensure it's a number
+            categoryId: formData.categoryId,
+            images: formData.images.filter(img => img.trim() !== ''),
         };
 
         try {
             let res;
             if (isEditMode && product?.id) {
-                res = await dispatch(updateProduct({ id: product.id, data: productData, token: authToken as string }));
+                res = await dispatch(updateProduct({ 
+                    id: product.id, 
+                    data: productData, 
+                    token: authToken as string 
+                }));
             } else {
-                res = await dispatch(createProduct({ productsData: productData, token: authToken as string }));
+                res = await dispatch(createProduct({ 
+                    productsData: productData, 
+                    token: authToken as string 
+                }));
             }
 
             if (createProduct.fulfilled.match(res) || updateProduct.fulfilled.match(res)) {
@@ -183,8 +229,9 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
                         <input
                             type="text"
                             name="name"
-                            className={`input focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${shouldShowError('name') ? 'border-red-500' : 'border-gray-500'
-                                }`}
+                            className={`input focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${
+                                shouldShowError('name') ? 'border-red-500' : 'border-gray-500'
+                            }`}
                             placeholder="Enter product name"
                             value={formData.name}
                             onChange={handleChange}
@@ -201,8 +248,9 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
                         <textarea
                             name="description"
                             rows={4}
-                            className={`textarea focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${shouldShowError('description') ? 'border-red-500' : 'border-gray-500'
-                                }`}
+                            className={`textarea focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${
+                                shouldShowError('description') ? 'border-red-500' : 'border-gray-500'
+                            }`}
                             placeholder="Enter product description"
                             value={formData.description}
                             onChange={handleChange}
@@ -213,33 +261,35 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
                         </p>
                     </div>
 
-                    {/* Price and Stock */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="label text-sm mb-1 text-white">Price ($) *</label>
-                            <input
-                                type="text"
-                                name="price"
-                                className={`input focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${shouldShowError('price') ? 'border-red-500' : 'border-gray-500'
-                                    }`}
-                                placeholder="0.00"
-                                value={formData.price}
-                                onChange={handleChange}
-                                onBlur={() => handleBlur('price')}
-                            />
-                            <p className={`text-sm text-red-500 mt-2 ${shouldShowError('price') ? 'block' : 'hidden'}`}>
-                                {errors.price}
-                            </p>
-                        </div>
+                    {/* Price */}
+                    <div>
+                        <label className="label text-sm mb-1 text-white">Price ($) *</label>
+                        <input
+                            type="number"
+                            name="price"
+                            step="0.01"
+                            min="0"
+                            className={`input focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${
+                                shouldShowError('price') ? 'border-red-500' : 'border-gray-500'
+                            }`}
+                            placeholder="0.00"
+                            value={formData.price}
+                            onChange={handleChange}
+                            onBlur={() => handleBlur('price')}
+                        />
+                        <p className={`text-sm text-red-500 mt-2 ${shouldShowError('price') ? 'block' : 'hidden'}`}>
+                            {errors.price}
+                        </p>
                     </div>
 
                     {/* Category */}
                     <div>
                         <label className="label text-sm mb-1 text-white">Category *</label>
                         <select
-                            name="categoryId" // Changed from category
-                            className={`select focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${shouldShowError('categoryId') ? 'border-red-500' : 'border-gray-500'
-                                }`}
+                            name="categoryId"
+                            className={`select focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${
+                                shouldShowError('categoryId') ? 'border-red-500' : 'border-gray-500'
+                            }`}
                             value={formData.categoryId}
                             onChange={handleChange}
                             onBlur={() => handleBlur('categoryId')}
@@ -262,8 +312,9 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
                         <input
                             type="text"
                             name="images"
-                            className={`input focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${shouldShowError('images') ? 'border-red-500' : 'border-gray-500'
-                                }`}
+                            className={`input focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${
+                                shouldShowError('images') ? 'border-red-500' : 'border-gray-500'
+                            }`}
                             placeholder="https://example.com/image.jpg"
                             value={formData.images[0] || ''}
                             onChange={handleChange}

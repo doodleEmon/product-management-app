@@ -4,7 +4,7 @@ import { getCategories } from '@/redux/actions/categories';
 
 const initialState: CategoryState = {
     categories: [],
-    loading: false,
+    loading: 'idle',
     error: null,
 };
 
@@ -15,23 +15,23 @@ const categoriesSlice = createSlice({
         clearCategories: (state) => {
             state.categories = [];
             state.error = null;
-            state.loading = false;
+            state.loading = 'idle';
         }
     },
     extraReducers: (builder) => {
         builder
             .addCase(getCategories.pending, (state) => {
-                state.loading = true;
+                state.loading = 'pending';
                 state.error = null;
             })
             .addCase(getCategories.fulfilled, (state, action: PayloadAction<Category[]>) => {
-                state.loading = false;
+                state.loading = 'succeeded';
                 const data = action.payload;
                 console.log("🚀 ~ data:", data)
                 state.categories = action.payload;
             })
             .addCase(getCategories.rejected, (state, action) => {
-                state.loading = false;
+                state.loading = 'failed';
                 state.error = action.error.message ?? 'Failed to fetch categories';
             })
     }
