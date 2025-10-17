@@ -1,44 +1,29 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/redux/store';
-import { CgSpinner } from 'react-icons/cg';
+import { useEffect, useState } from 'react';
+import Loader from '@/components/Loader';
 
-interface ProtectedLayoutProps {
-    children: React.ReactNode;
-    fallbackPath?: string;
-}
-
-export default function ProtectedLayout({
-    children,
-    fallbackPath = '/login'
-}: ProtectedLayoutProps) {
-    const { authToken } = useSelector((state: RootState) => state.auth);
+export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
     const router = useRouter();
-    const [isChecking, setIsChecking] = useState(true);
+    const [authChecked, setAuthChecked] = useState(false);
 
     useEffect(() => {
-        if (!authToken) {
-            router.push(fallbackPath);
-        } else {
-            setIsChecking(false);
-        }
-    }, [authToken, router, fallbackPath]);
+        const token = localStorage.getItem('token');
 
-    if (isChecking || authToken === null) {
+        if (!token) {
+            router.replace('/login');
+        } else {
+            setAuthChecked(true);
+        }
+    }, [router]);
+
+    if (!authChecked) {
         return (
-            <div className="flex justify-center items-center min-h-screen">
-                <div className="text-lg animate-spin">
-                    <CgSpinner size={24} />
-                </div>
+            <div className="flex items-center justify-center h-screen text-gray-600">
+                <Loader />
             </div>
         );
-    }
-
-    if (!authToken) {
-        return null;
     }
 
     return <>{children}</>;

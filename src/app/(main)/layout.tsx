@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
-import ReduxProvider from "@/redux/ReduxProvider";
 import { Slide, ToastContainer } from "react-toastify";
 import ProtectedLayout from "@/components/ProtectedLayout";
 import Header from "@/components/Header";
+import { ReduxProvider } from "@/redux/ReduxProvider";
 
 const geistSans = Geist({
     variable: "--font-geist-sans",
