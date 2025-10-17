@@ -9,10 +9,12 @@ const initialState: ProductState = {
     searchLoading: 'idle',
     createLoading: 'idle',
     updateLoading: 'idle',
+    slugLoading: 'idle',
     error: null,
     searchError: null,
     createError: null,
     updateError: null,
+    slugError: null,
     searchQuery: '',
     currentPage: 1,
     total: 0,
@@ -57,8 +59,17 @@ const productsSlice = createSlice({
             })
 
             // get product by slug
+            .addCase(getProductBySlug.pending, (state, action) => {
+                state.slugLoading = 'pending';
+                state.slugError = null;
+            })
             .addCase(getProductBySlug.fulfilled, (state, action) => {
+                state.slugLoading = 'succeeded';
                 state.product = action.payload;
+            })
+            .addCase(getProductBySlug.rejected, (state, action) => {
+                state.slugLoading = 'failed';
+                state.slugError = action.error.message ?? 'Failed to fetch product';;
             })
 
             // create product

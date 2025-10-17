@@ -19,10 +19,12 @@ export interface ProductState {
     searchLoading: 'idle' | 'pending' | 'succeeded' | 'failed';
     createLoading: 'idle' | 'pending' | 'succeeded' | 'failed';
     updateLoading: 'idle' | 'pending' | 'succeeded' | 'failed';
+    slugLoading: 'idle' | 'pending' | 'succeeded' | 'failed';
     error: string | null;
     searchError: string | null;
     createError: string | null;
     updateError: string | null;
+    slugError: string | null;
     searchQuery: string;
     currentPage: number;
     total: number;
