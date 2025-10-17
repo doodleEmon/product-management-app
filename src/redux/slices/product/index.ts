@@ -7,8 +7,12 @@ const initialState: ProductState = {
     product: null,
     loading: 'idle',
     searchLoading: 'idle',
+    createLoading: 'idle',
+    updateLoading: 'idle',
     error: null,
     searchError: null,
+    createError: null,
+    updateError: null,
     searchQuery: '',
     currentPage: 1,
     total: 0,
@@ -58,14 +62,32 @@ const productsSlice = createSlice({
             })
 
             // create product
+            .addCase(createProduct.pending, (state, action) => {
+                state.createLoading = 'pending';
+                state.createError = null;
+            })
             .addCase(createProduct.fulfilled, (state, action) => {
+                state.createLoading = 'succeeded';
                 state.products.unshift(action.payload);
+            })
+            .addCase(createProduct.rejected, (state, action) => {
+                state.createLoading = 'failed';
+                state.createError = action.error.message ?? 'Failed to create product';
             })
 
             // update product
+            .addCase(updateProduct.pending, (state, action) => {
+                state.updateLoading = 'pending';
+                state.updateError = null;
+            })
             .addCase(updateProduct.fulfilled, (state, action) => {
+                state.updateLoading = 'succeeded';
                 const index = state.products.findIndex(p => p.id === action.payload.id);
                 if (index !== -1) state.products[index] = action.payload;
+            })
+            .addCase(updateProduct.rejected, (state, action) => {
+                state.updateLoading = 'failed';
+                state.updateError = action.error.message ?? 'Failed to update product';
             })
 
             // delete product

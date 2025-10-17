@@ -17,7 +17,6 @@ import Link from 'next/link';
 const ProductsPage: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
     const { products, loading, error, currentPage, limit } = useSelector((state: RootState) => state.product);
-    console.log("🚀 ~ ProductsPage ~ products:", products.length);
     const { authToken } = useSelector((state: RootState) => state.auth);
     const [query, setQuery] = useState('');
     const debouncedQuery = useDebounce(query, 400);

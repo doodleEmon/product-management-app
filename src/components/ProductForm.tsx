@@ -1,6 +1,7 @@
 // components/ProductForm.tsx
 "use client"
 
+import { getCategories } from '@/redux/actions/categories';
 import { createProduct, updateProduct } from '@/redux/actions/products';
 import { AppDispatch, RootState } from '@/redux/store';
 import { Category } from '@/types/categories';
@@ -32,7 +33,7 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
 
     const dispatch = useDispatch<AppDispatch>();
     const { authToken } = useSelector((state: RootState) => state.auth);
-    const { loading } = useSelector((state: RootState) => state.product);
+    const { loading, createLoading, updateLoading } = useSelector((state: RootState) => state.product);
     const { categories } = useSelector((state: RootState) => state.category);
     const router = useRouter();
 
@@ -143,9 +144,9 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
             }));
         } else if (name === 'price') {
             // Handle price input - always store as number
-            setFormData(prev => ({ 
-                ...prev, 
-                price: value === '' ? 0 : Number(value) 
+            setFormData(prev => ({
+                ...prev,
+                price: value === '' ? 0 : Number(value)
             }));
         } else {
             setFormData(prev => ({ ...prev, [name]: value }));
@@ -185,15 +186,15 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
         try {
             let res;
             if (isEditMode && product?.id) {
-                res = await dispatch(updateProduct({ 
-                    id: product.id, 
-                    data: productData, 
-                    token: authToken as string 
+                res = await dispatch(updateProduct({
+                    id: product.id,
+                    data: productData,
+                    token: authToken as string
                 }));
             } else {
-                res = await dispatch(createProduct({ 
-                    productsData: productData, 
-                    token: authToken as string 
+                res = await dispatch(createProduct({
+                    productsData: productData,
+                    token: authToken as string
                 }));
             }
 
@@ -215,6 +216,12 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
 
     const shouldShowError = (field: keyof ProductErrors) => touched[field] && errors[field];
 
+    useEffect(() => {
+        if (!categories.length && authToken) {
+            dispatch(getCategories({ token: authToken }));
+        }
+    }, [categories.length, authToken, dispatch]);
+
     return (
         <div className="max-w-2xl mx-auto p-6">
             <div className="bg-[#1D232A] rounded-lg p-6 shadow-lg">
@@ -225,13 +232,12 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Product Name */}
                     <div>
-                        <label className="label text-sm mb-1 text-white">Product Name *</label>
+                        <label className="label text-sm text-white">Product Name *</label>
                         <input
                             type="text"
                             name="name"
-                            className={`input focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${
-                                shouldShowError('name') ? 'border-red-500' : 'border-gray-500'
-                            }`}
+                            className={`input py-2.5 px-4 rounded-md mt-1 focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${shouldShowError('name') ? 'border-red-500' : 'border-gray-500'
+                                }`}
                             placeholder="Enter product name"
                             value={formData.name}
                             onChange={handleChange}
@@ -248,9 +254,8 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
                         <textarea
                             name="description"
                             rows={4}
-                            className={`textarea focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${
-                                shouldShowError('description') ? 'border-red-500' : 'border-gray-500'
-                            }`}
+                            className={`textarea py-2.5 px-4 rounded-md mt-1 focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${shouldShowError('description') ? 'border-red-500' : 'border-gray-500'
+                                }`}
                             placeholder="Enter product description"
                             value={formData.description}
                             onChange={handleChange}
@@ -263,15 +268,14 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
 
                     {/* Price */}
                     <div>
-                        <label className="label text-sm mb-1 text-white">Price ($) *</label>
+                        <label className="label text-sm mb-1 text-white">Price (৳) *</label>
                         <input
                             type="number"
                             name="price"
                             step="0.01"
                             min="0"
-                            className={`input focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${
-                                shouldShowError('price') ? 'border-red-500' : 'border-gray-500'
-                            }`}
+                            className={`input py-2.5 px-4 rounded-md mt-1 focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${shouldShowError('price') ? 'border-red-500' : 'border-gray-500'
+                                }`}
                             placeholder="0.00"
                             value={formData.price}
                             onChange={handleChange}
@@ -287,9 +291,8 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
                         <label className="label text-sm mb-1 text-white">Category *</label>
                         <select
                             name="categoryId"
-                            className={`select focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${
-                                shouldShowError('categoryId') ? 'border-red-500' : 'border-gray-500'
-                            }`}
+                            className={`select py-2.5 px-4 rounded-md mt-1 focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${shouldShowError('categoryId') ? 'border-red-500' : 'border-gray-500'
+                                }`}
                             value={formData.categoryId}
                             onChange={handleChange}
                             onBlur={() => handleBlur('categoryId')}
@@ -312,9 +315,8 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
                         <input
                             type="text"
                             name="images"
-                            className={`input focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${
-                                shouldShowError('images') ? 'border-red-500' : 'border-gray-500'
-                            }`}
+                            className={`input py-2.5 px-4 rounded-md mt-1 focus:outline-none w-full border bg-[#2A323C] focus:border-white text-white ${shouldShowError('images') ? 'border-red-500' : 'border-gray-500'
+                                }`}
                             placeholder="https://example.com/image.jpg"
                             value={formData.images[0] || ''}
                             onChange={handleChange}
@@ -328,10 +330,10 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
                     {/* Submit Button */}
                     <button
                         type="submit"
-                        disabled={loading === 'pending'}
-                        className="w-full p-3 mt-6 bg-indigo-600 rounded text-base cursor-pointer text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={createLoading === 'pending' || updateLoading === 'pending'}
+                        className="w-full p-3 mt-6 bg-[#4E6E5D] rounded text-base cursor-pointer text-white disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {loading === 'pending' ? (
+                        {createLoading === 'pending' || updateLoading === 'pending' ? (
                             <span className="flex items-center justify-center gap-x-1">
                                 <CgSpinner size={16} className="animate-spin" />
                                 {isEditMode ? 'Updating...' : 'Creating...'}

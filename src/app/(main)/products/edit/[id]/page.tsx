@@ -1,6 +1,7 @@
 // app/products/edit/[id]/page.tsx
 "use client"
 
+import Loader from '@/components/Loader';
 import ProductForm from '@/components/ProductForm';
 import { getProducts } from '@/redux/actions/products';
 import { AppDispatch, RootState } from '@/redux/store';
@@ -26,7 +27,7 @@ export default function EditProductPage() {
   if (!product) {
     return (
       <div className="flex justify-center items-center min-h-64">
-        <div className="text-gray-400">Loading product...</div>
+        <Loader />
       </div>
     );
   }

@@ -16,9 +16,13 @@ export interface ProductState {
     products: Product[];
     product: Product | null;
     loading: 'idle' | 'pending' | 'succeeded' | 'failed';
-    searchLoading:  'idle' | 'pending' | 'succeeded' | 'failed';
+    searchLoading: 'idle' | 'pending' | 'succeeded' | 'failed';
+    createLoading: 'idle' | 'pending' | 'succeeded' | 'failed';
+    updateLoading: 'idle' | 'pending' | 'succeeded' | 'failed';
     error: string | null;
     searchError: string | null;
+    createError: string | null;
+    updateError: string | null;
     searchQuery: string;
     currentPage: number;
     total: number;
@@ -34,10 +38,10 @@ export interface ProductFormData {
 }
 
 export interface ProductErrors {
-  name?: string;
-  description?: string;
-  price?: string;
-  categoryId?: string; // Changed from category
-  images?: string; // Changed from image
-  stock?: string;
+    name?: string;
+    description?: string;
+    price?: string;
+    categoryId?: string; // Changed from category
+    images?: string; // Changed from image
+    stock?: string;
 }
