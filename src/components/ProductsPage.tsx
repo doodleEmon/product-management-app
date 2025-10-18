@@ -47,14 +47,14 @@ const ProductsPage: React.FC = () => {
                 token: authToken
             }));
         }
-    }, [dispatch, debouncedQuery, currentPage, selectedCategory, authToken, isSearchMode, limit]);
+    }, [debouncedQuery, currentPage, selectedCategory, authToken, isSearchMode, limit]);
 
     // Reset to page 1 when search query or category changes (but avoid infinite loop)
     useEffect(() => {
         if (currentPage !== 1) {
             dispatch(setCurrentPage(1));
         }
-    }, [selectedCategory, debouncedQuery, dispatch, currentPage]);
+    }, [selectedCategory, debouncedQuery]);
 
     const refreshProducts = () => {
         if (!authToken) return;
