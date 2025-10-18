@@ -17,7 +17,7 @@ import { toast } from 'react-toastify';
 
 const ProductsPage: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
-    const { products, loading, error, currentPage, limit } = useSelector((state: RootState) => state.product);
+    const { products, loading, searchLoading, error, searchError, currentPage, limit, total } = useSelector((state: RootState) => state.product);
     const { authToken } = useSelector((state: RootState) => state.auth);
     const [query, setQuery] = useState('');
     const debouncedQuery = useDebounce(query, 400);
@@ -25,44 +25,93 @@ const ProductsPage: React.FC = () => {
     const [toDelete, setToDelete] = useState<{ id: string; name?: string } | null>(null);
     const [showMobileSidebar, setShowMobileSidebar] = useState(false);
 
-    useEffect(() => {
-        if (debouncedQuery) {
-            dispatch(searchProducts({ query: debouncedQuery, token: authToken as string }));
-        } else {
-            const offset = (currentPage - 1) * limit;
-            dispatch(getProducts({ offset, limit, categoryId: selectedCategory ?? undefined, token: authToken as string }));
-        }
-    }, [debouncedQuery, currentPage, authToken, selectedCategory]);
+    // Determine if we're in search mode
+    const isSearchMode = debouncedQuery.trim().length > 0;
+    const activeLoading = isSearchMode ? searchLoading : loading;
+    const activeError = isSearchMode ? searchError : error;
 
+    // Fetch products based on search or normal mode
     useEffect(() => {
-        dispatch(setCurrentPage(1));
-    }, [selectedCategory, debouncedQuery]);
+        if (!authToken) return;
+
+        if (isSearchMode) {
+            // Search mode - no pagination, no category filter
+            dispatch(searchProducts({ query: debouncedQuery.trim(), token: authToken }));
+        } else {
+            // Normal mode - with pagination and category filter
+            const offset = (currentPage - 1) * limit;
+            dispatch(getProducts({ 
+                offset, 
+                limit, 
+                categoryId: selectedCategory ?? undefined, 
+                token: authToken 
+            }));
+        }
+    }, [debouncedQuery, currentPage, selectedCategory, authToken, dispatch, isSearchMode, limit]);
+
+    // Reset to page 1 when search query or category changes
+    useEffect(() => {
+        if (currentPage !== 1) {
+            dispatch(setCurrentPage(1));
+        }
+    }, [selectedCategory, debouncedQuery, dispatch]);
 
     const onConfirmDelete = async () => {
-        if (!toDelete) return;
+        if (!toDelete || !authToken) return;
 
         const result = await dispatch(
-            deleteProduct({ id: toDelete.id, token: authToken as string })
+            deleteProduct({ id: toDelete.id, token: authToken })
         );
 
         if (deleteProduct.fulfilled.match(result)) {
             toast.success('Product deleted successfully!');
 
-            const offset = (currentPage - 1) * limit;
-            dispatch(
-                getProducts({
-                    offset,
-                    limit,
-                    categoryId: selectedCategory ?? undefined,
-                    token: authToken as string,
-                })
-            );
+            // Check if current page becomes empty after delete
+            const remainingProducts = products.length - 1;
+            
+            // If we're not on page 1 and this was the last item on current page
+            if (remainingProducts === 0 && currentPage > 1) {
+                // Go to previous page
+                dispatch(setCurrentPage(currentPage - 1));
+            } else {
+                // Refresh the current page
+                if (isSearchMode) {
+                    dispatch(searchProducts({ query: debouncedQuery.trim(), token: authToken }));
+                } else {
+                    const offset = (currentPage - 1) * limit;
+                    dispatch(
+                        getProducts({
+                            offset,
+                            limit,
+                            categoryId: selectedCategory ?? undefined,
+                            token: authToken,
+                        })
+                    );
+                }
+            }
 
             setToDelete(null);
         } else {
             toast.error('Failed to delete product.');
         }
     };
+
+    const handleCategorySelect = (id: string | null) => {
+        setSelectedCategory(id);
+        setShowMobileSidebar(false);
+        // Clear search when selecting category
+        setQuery('');
+    };
+
+    const handlePageChange = (page: number) => {
+        dispatch(setCurrentPage(page));
+        // Scroll to top when page changes
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Calculate if pagination should be shown
+    const showPagination = !isSearchMode && total > limit;
+    const totalPages = Math.ceil(total / limit);
 
     return (
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-4 lg:p-6 min-h-screen">
@@ -98,14 +147,8 @@ const ProductsPage: React.FC = () => {
                     </div>
                     <CategorySidebar
                         selectedCategory={selectedCategory}
-                        onSelectCategory={(id) => {
-                            setSelectedCategory(id);
-                            setShowMobileSidebar(false);
-                        }}
-                        onClear={() => {
-                            setSelectedCategory(null);
-                            setShowMobileSidebar(false);
-                        }}
+                        onSelectCategory={handleCategorySelect}
+                        onClear={() => handleCategorySelect(null)}
                     />
                 </div>
             </div>
@@ -121,13 +164,21 @@ const ProductsPage: React.FC = () => {
                             <span className='text-base'>+</span> Create
                         </Link>
 
-                        <div className="flex-1 min-w-0">
+                        <div className="flex-1 min-w-0 relative">
                             <input
                                 value={query}
                                 onChange={(e) => setQuery(e.target.value)}
                                 placeholder="Search products by name..."
                                 className="w-full h-12 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4E6E5D] focus:border-transparent"
                             />
+                            {query && (
+                                <button
+                                    onClick={() => setQuery('')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                                >
+                                    <FiX size={20} />
+                                </button>
+                            )}
                         </div>
 
                         <Link href={'/products/create'} className='hover:bg-[#4E6E5D] text-[#4E6E5D] border border-[#4E6E5D] hover:text-white px-4 cursor-pointer rounded-lg hidden lg:flex items-center justify-center gap-x-2 font-semibold transition-colors duration-200 whitespace-nowrap'>
@@ -136,52 +187,87 @@ const ProductsPage: React.FC = () => {
                     </div>
                 </div>
 
+                {/* Search Info Banner */}
+                {isSearchMode && (
+                    <div className="mb-4 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg flex items-center justify-between">
+                        <span>
+                            Searching for: <strong>{debouncedQuery}</strong>
+                            {activeLoading === 'succeeded' && ` (${products.length} result${products.length !== 1 ? 's' : ''})`}
+                        </span>
+                        <button
+                            onClick={() => setQuery('')}
+                            className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+                        >
+                            Clear
+                        </button>
+                    </div>
+                )}
+
                 {/* Loading State */}
-                {loading === 'pending' && (
+                {activeLoading === 'pending' && (
                     <div className='flex justify-center items-center h-[70%] py-8'>
                         <Loader />
                     </div>
                 )}
 
                 {/* Error State */}
-                {error && (
+                {activeError && activeLoading !== 'pending' && (
                     <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4">
-                        {error}
+                        {activeError}
                     </div>
                 )}
 
                 {/* Empty State */}
-                {loading === 'succeeded' && products.length === 0 && (
+                {activeLoading === 'succeeded' && products.length === 0 && (
                     <div className="text-center py-12 text-gray-500">
-                        <p className="text-lg">No products found.</p>
-                        <p className="text-sm mt-2">Try adjusting your search or filters</p>
+                        <p className="text-lg">
+                            {isSearchMode 
+                                ? `No products found for "${debouncedQuery}"`
+                                : 'No products found.'
+                            }
+                        </p>
+                        <p className="text-sm mt-2">
+                            {isSearchMode 
+                                ? 'Try a different search term'
+                                : 'Try adjusting your filters or create a new product'
+                            }
+                        </p>
                     </div>
                 )}
 
                 {/* Products Grid */}
-                {loading === 'succeeded' && products.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
-                        {products.map((p) => (
-                            <ProductCard
-                                key={p.id}
-                                product={p}
-                                onDelete={() => setToDelete({ id: p.id, name: p.name })}
-                            />
-                        ))}
-                    </div>
-                )}
+                {activeLoading === 'succeeded' && products.length > 0 && (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
+                            {products.map((p) => (
+                                <ProductCard
+                                    key={p.id}
+                                    product={p}
+                                    onDelete={() => setToDelete({ id: p.id, name: p.name })}
+                                />
+                            ))}
+                        </div>
 
-                {/* Pagination */}
-                {/* {!loading && products.length > 0 && (
-                    <div className="mt-6 lg:mt-8 flex flex-wrap">
-                        <Pagination
-                            onPageChange={(page) => dispatch(setCurrentPage(page))}
-                            currentPage={currentPage}
-                            pageSize={limit}
-                            totalItems={150}
-                        />
-                    </div>
-                )} */}
+                        {/* Pagination - Only show in normal mode (not search) */}
+                        {showPagination && (
+                            <div className="mt-6 lg:mt-8 flex justify-center">
+                                <Pagination
+                                    onPageChange={handlePageChange}
+                                    currentPage={currentPage}
+                                    pageSize={limit}
+                                    totalItems={total}
+                                />
+                            </div>
+                        )}
+
+                        {/* Results info for non-paginated view */}
+                        {!showPagination && !isSearchMode && (
+                            <div className="mt-6 text-center text-sm text-gray-600">
+                                Showing {products.length} product{products.length !== 1 ? 's' : ''}
+                            </div>
+                        )}
+                    </>
+                )}
             </main>
 
             {/* Delete Confirmation Modal */}

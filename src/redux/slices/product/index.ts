@@ -31,6 +31,11 @@ const productsSlice = createSlice({
         setCurrentPage: (state, action: PayloadAction<number>) => {
             state.currentPage = action.payload;
         },
+        clearSearchResults: (state) => {
+            state.searchQuery = '';
+            state.products = [];
+            state.searchError = null;
+        },
     },
     extraReducers: (builder) => {
         builder
@@ -42,6 +47,18 @@ const productsSlice = createSlice({
             .addCase(getProducts.fulfilled, (state, action) => {
                 state.loading = 'succeeded';
                 state.products = action.payload;
+                
+                // Better total count estimation logic
+                const receivedCount = action.payload.length;
+                
+                if (receivedCount < state.limit) {
+                    // Last page - we know exact total
+                    state.total = ((state.currentPage - 1) * state.limit) + receivedCount;
+                } else {
+                    // Full page received - there might be more pages
+                    // Set total to show at least one more page
+                    state.total = (state.currentPage * state.limit) + 1;
+                }
             })
             .addCase(getProducts.rejected, (state, action) => {
                 state.loading = 'failed';
@@ -49,17 +66,23 @@ const productsSlice = createSlice({
             })
 
             // get searched products
-            .addCase(searchProducts.pending, (state, action) => {
+            .addCase(searchProducts.pending, (state) => {
                 state.searchLoading = 'pending';
                 state.searchError = null;
             })
             .addCase(searchProducts.fulfilled, (state, action) => {
                 state.searchLoading = 'succeeded';
                 state.products = action.payload;
+                // For search, total is just the result count
+                state.total = action.payload.length;
+            })
+            .addCase(searchProducts.rejected, (state, action) => {
+                state.searchLoading = 'failed';
+                state.searchError = action.error.message ?? 'Search failed';
             })
 
             // get product by slug
-            .addCase(getProductBySlug.pending, (state, action) => {
+            .addCase(getProductBySlug.pending, (state) => {
                 state.slugLoading = 'pending';
                 state.slugError = null;
             })
@@ -69,17 +92,26 @@ const productsSlice = createSlice({
             })
             .addCase(getProductBySlug.rejected, (state, action) => {
                 state.slugLoading = 'failed';
-                state.slugError = action.error.message ?? 'Failed to fetch product';;
+                state.slugError = action.error.message ?? 'Failed to fetch product';
             })
 
             // create product
-            .addCase(createProduct.pending, (state, action) => {
+            .addCase(createProduct.pending, (state) => {
                 state.createLoading = 'pending';
                 state.createError = null;
             })
             .addCase(createProduct.fulfilled, (state, action) => {
                 state.createLoading = 'succeeded';
-                state.products.unshift(action.payload);
+                // Don't add to products array if we're not on page 1
+                // Better to refresh the list
+                if (state.currentPage === 1) {
+                    state.products.unshift(action.payload);
+                    // If we exceed limit, remove last item
+                    if (state.products.length > state.limit) {
+                        state.products.pop();
+                    }
+                }
+                state.total += 1;
             })
             .addCase(createProduct.rejected, (state, action) => {
                 state.createLoading = 'failed';
@@ -87,7 +119,7 @@ const productsSlice = createSlice({
             })
 
             // update product
-            .addCase(updateProduct.pending, (state, action) => {
+            .addCase(updateProduct.pending, (state) => {
                 state.updateLoading = 'pending';
                 state.updateError = null;
             })
@@ -104,9 +136,10 @@ const productsSlice = createSlice({
             // delete product
             .addCase(deleteProduct.fulfilled, (state, action) => {
                 state.products = state.products.filter(p => p.id !== action.payload);
+                state.total = Math.max(0, state.total - 1);
             });
     }
 });
 
-export const { setSearchQuery, setCurrentPage } = productsSlice.actions;
+export const { setSearchQuery, setCurrentPage, clearSearchResults } = productsSlice.actions;
 export default productsSlice.reducer;

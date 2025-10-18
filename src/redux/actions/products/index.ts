@@ -49,7 +49,7 @@ export const createProduct = createAsyncThunk(
     }
 );
 
-// Search products by name
+// Search products by name - FIXED ENDPOINT
 export const searchProducts = createAsyncThunk(
     'products/search',
     async ({
@@ -60,7 +60,12 @@ export const searchProducts = createAsyncThunk(
         token: string
     }, thunkAPI) => {
         try {
-            const response = await apiCall<Product[]>(`/search?searchedText=${query}`, "GET", undefined, token);
+            const response = await apiCall<Product[]>(
+                `/products/search?searchedText=${encodeURIComponent(query)}`, 
+                "GET", 
+                undefined, 
+                token
+            );
             return response;
         } catch (error: any) {
             return thunkAPI.rejectWithValue(error.message || 'Search failed');
