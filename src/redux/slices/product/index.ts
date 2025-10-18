@@ -103,7 +103,7 @@ const productsSlice = createSlice({
                 state.createLoading = 'pending';
                 state.createError = null;
             })
-            .addCase(createProduct.fulfilled, (state, action) => {
+            .addCase(createProduct.fulfilled, (state) => {
                 state.createLoading = 'succeeded';
                 // Don't modify products array - just refresh will handle it
             })

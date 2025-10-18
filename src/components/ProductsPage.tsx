@@ -40,25 +40,25 @@ const ProductsPage: React.FC = () => {
         } else {
             // Normal mode - with pagination and category filter
             const offset = (currentPage - 1) * limit;
-            dispatch(getProducts({ 
-                offset, 
-                limit, 
-                categoryId: selectedCategory ?? undefined, 
-                token: authToken 
+            dispatch(getProducts({
+                offset,
+                limit,
+                categoryId: selectedCategory ?? undefined,
+                token: authToken
             }));
         }
-    }, [debouncedQuery, currentPage, selectedCategory, authToken, isSearchMode, limit]);
+    }, [dispatch, debouncedQuery, currentPage, selectedCategory, authToken, isSearchMode, limit]);
 
     // Reset to page 1 when search query or category changes (but avoid infinite loop)
     useEffect(() => {
         if (currentPage !== 1) {
             dispatch(setCurrentPage(1));
         }
-    }, [selectedCategory, debouncedQuery]);
+    }, [selectedCategory, debouncedQuery, dispatch, currentPage]);
 
     const refreshProducts = () => {
         if (!authToken) return;
-        
+
         if (isSearchMode) {
             dispatch(searchProducts({ query: debouncedQuery.trim(), token: authToken }));
         } else {
@@ -84,7 +84,7 @@ const ProductsPage: React.FC = () => {
 
             // Check if we need to go back a page
             const remainingOnPage = products.length - 1;
-            
+
             if (remainingOnPage === 0 && currentPage > 1) {
                 // Last item on page deleted and not on first page - go back
                 dispatch(setCurrentPage(currentPage - 1));
@@ -132,7 +132,7 @@ const ProductsPage: React.FC = () => {
                 ${showMobileSidebar ? 'fixed inset-0 z-40 bg-black/50' : 'hidden'} 
                 lg:relative lg:block
             `} onClick={() => setShowMobileSidebar(false)}>
-                <div 
+                <div
                     className={`
                         ${showMobileSidebar ? 'fixed left-0 top-0 h-full w-80 max-w-[80vw] z-50' : 'relative w-full'}
                         bg-white p-4 lg:p-0 transition-transform duration-300
@@ -226,13 +226,13 @@ const ProductsPage: React.FC = () => {
                 {activeLoading === 'succeeded' && products.length === 0 && (
                     <div className="text-center py-12 text-gray-500">
                         <p className="text-lg">
-                            {isSearchMode 
+                            {isSearchMode
                                 ? `No products found for "${debouncedQuery}"`
                                 : 'No products found.'
                             }
                         </p>
                         <p className="text-sm mt-2">
-                            {isSearchMode 
+                            {isSearchMode
                                 ? 'Try a different search term'
                                 : 'Try adjusting your filters or create a new product'
                             }
