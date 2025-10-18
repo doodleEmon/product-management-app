@@ -5,7 +5,7 @@ import { baseUrl } from "@/constants";
 export async function apiCall<T>(
     endpoint: string,
     method: "GET" | "POST" | "PUT" | "DELETE",
-    body?: any,
+    body?: unknown, // Changed from any to unknown
     token?: string
 ): Promise<T> {
 
@@ -24,10 +24,10 @@ export async function apiCall<T>(
     });
 
     if (!res.ok) {
-        const errorData = await res.json();
+        const errorData = await res.json() as { message?: string };
         console.log('errorData.message', errorData.message)
         throw new Error(errorData.message || "API request failed");
     }
 
-    return res.json();
+    return res.json() as Promise<T>;
 }

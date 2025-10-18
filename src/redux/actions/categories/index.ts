@@ -1,5 +1,6 @@
 import { apiCall } from '@/services/api';
 import { Category } from '@/types/categories';
+import { getErrorMessage } from '@/utils/errorHandler';
 import { createAsyncThunk } from '@reduxjs/toolkit';
 
 interface GetCategoriesParams {
@@ -8,21 +9,20 @@ interface GetCategoriesParams {
 
 export const getCategories = createAsyncThunk(
     'categories/getAll',
-    async (params: GetCategoriesParams, thunkAPI): Promise<Category[]> => {
+    async (params: GetCategoriesParams, { rejectWithValue }) => {
         try {
             const { token } = params;
-            
+
             const categories = await apiCall<Category[]>(
-                `/categories`, 
-                'GET', 
-                undefined, 
+                `/categories`,
+                'GET',
+                undefined,
                 token
             );
-            
+
             return categories;
-        } catch (error: any) {
-            const errorMessage = error?.message || 'Failed to fetch categories';
-            return thunkAPI.rejectWithValue(errorMessage) as any;
+        } catch (error: unknown) {
+            return rejectWithValue(getErrorMessage(error));
         }
     }
 );

@@ -14,6 +14,7 @@ import { MdDelete, MdCloudUpload } from 'react-icons/md';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import Image from 'next/image';
+import { getErrorMessage } from '@/utils/errorHandler';
 
 interface ProductFormProps {
     product?: Product | null;
@@ -253,18 +254,8 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
                 const errorMessage = res.payload as string || `Failed to ${isEditMode ? 'update' : 'create'} product!`;
                 toast.error(errorMessage);
             }
-        } catch (error) {
-            let message = 'An unexpected error occurred!';
-
-            if (error instanceof Error) {
-                message = error.message;
-            } else if (typeof error === 'string') {
-                message = error;
-            } else if (typeof (error as any)?.response?.data?.message === 'string') {
-                message = (error as any).response.data.message;
-            }
-
-            toast.error(message);
+        } catch (error: unknown) {
+            toast.error(getErrorMessage(error) || 'An unexpected error occurred!');
         }
     };
 
