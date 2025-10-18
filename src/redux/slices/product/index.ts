@@ -19,6 +19,7 @@ const initialState: ProductState = {
     currentPage: 1,
     total: 0,
     limit: 12,
+    hasMore: true,
 };
 
 const productsSlice = createSlice({
@@ -46,18 +47,20 @@ const productsSlice = createSlice({
             })
             .addCase(getProducts.fulfilled, (state, action) => {
                 state.loading = 'succeeded';
-                state.products = action.payload;
+                state.products = action.payload.products;
+                state.hasMore = action.payload.hasMore;
                 
-                // Better total count estimation logic
-                const receivedCount = action.payload.length;
+                // Calculate total based on hasMore flag
+                const currentOffset = action.payload.offset;
+                const currentLimit = action.payload.limit;
+                const receivedCount = action.payload.products.length;
                 
-                if (receivedCount < state.limit) {
-                    // Last page - we know exact total
-                    state.total = ((state.currentPage - 1) * state.limit) + receivedCount;
+                if (action.payload.hasMore) {
+                    // If there are more items, total is at least current offset + limit + 1
+                    state.total = currentOffset + currentLimit + 1;
                 } else {
-                    // Full page received - there might be more pages
-                    // Set total to show at least one more page
-                    state.total = (state.currentPage * state.limit) + 1;
+                    // No more items, so total is exact
+                    state.total = currentOffset + receivedCount;
                 }
             })
             .addCase(getProducts.rejected, (state, action) => {
@@ -73,8 +76,8 @@ const productsSlice = createSlice({
             .addCase(searchProducts.fulfilled, (state, action) => {
                 state.searchLoading = 'succeeded';
                 state.products = action.payload;
-                // For search, total is just the result count
                 state.total = action.payload.length;
+                state.hasMore = false;
             })
             .addCase(searchProducts.rejected, (state, action) => {
                 state.searchLoading = 'failed';
@@ -102,16 +105,7 @@ const productsSlice = createSlice({
             })
             .addCase(createProduct.fulfilled, (state, action) => {
                 state.createLoading = 'succeeded';
-                // Don't add to products array if we're not on page 1
-                // Better to refresh the list
-                if (state.currentPage === 1) {
-                    state.products.unshift(action.payload);
-                    // If we exceed limit, remove last item
-                    if (state.products.length > state.limit) {
-                        state.products.pop();
-                    }
-                }
-                state.total += 1;
+                // Don't modify products array - just refresh will handle it
             })
             .addCase(createProduct.rejected, (state, action) => {
                 state.createLoading = 'failed';
@@ -136,7 +130,6 @@ const productsSlice = createSlice({
             // delete product
             .addCase(deleteProduct.fulfilled, (state, action) => {
                 state.products = state.products.filter(p => p.id !== action.payload);
-                state.total = Math.max(0, state.total - 1);
             });
     }
 });

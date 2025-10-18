@@ -17,7 +17,7 @@ import { toast } from 'react-toastify';
 
 const ProductsPage: React.FC = () => {
     const dispatch = useDispatch<AppDispatch>();
-    const { products, loading, searchLoading, error, searchError, currentPage, limit, total } = useSelector((state: RootState) => state.product);
+    const { products, loading, searchLoading, error, searchError, currentPage, limit, total, hasMore } = useSelector((state: RootState) => state.product);
     const { authToken } = useSelector((state: RootState) => state.auth);
     const [query, setQuery] = useState('');
     const debouncedQuery = useDebounce(query, 400);
@@ -47,14 +47,30 @@ const ProductsPage: React.FC = () => {
                 token: authToken 
             }));
         }
-    }, [debouncedQuery, currentPage, selectedCategory, authToken, dispatch, isSearchMode, limit]);
+    }, [debouncedQuery, currentPage, selectedCategory, authToken, isSearchMode, limit]);
 
-    // Reset to page 1 when search query or category changes
+    // Reset to page 1 when search query or category changes (but avoid infinite loop)
     useEffect(() => {
         if (currentPage !== 1) {
             dispatch(setCurrentPage(1));
         }
-    }, [selectedCategory, debouncedQuery, dispatch, currentPage]);
+    }, [selectedCategory, debouncedQuery]);
+
+    const refreshProducts = () => {
+        if (!authToken) return;
+        
+        if (isSearchMode) {
+            dispatch(searchProducts({ query: debouncedQuery.trim(), token: authToken }));
+        } else {
+            const offset = (currentPage - 1) * limit;
+            dispatch(getProducts({
+                offset,
+                limit,
+                categoryId: selectedCategory ?? undefined,
+                token: authToken,
+            }));
+        }
+    };
 
     const onConfirmDelete = async () => {
         if (!toDelete || !authToken) return;
@@ -66,28 +82,15 @@ const ProductsPage: React.FC = () => {
         if (deleteProduct.fulfilled.match(result)) {
             toast.success('Product deleted successfully!');
 
-            // Check if current page becomes empty after delete
-            const remainingProducts = products.length - 1;
+            // Check if we need to go back a page
+            const remainingOnPage = products.length - 1;
             
-            // If we're not on page 1 and this was the last item on current page
-            if (remainingProducts === 0 && currentPage > 1) {
-                // Go to previous page
+            if (remainingOnPage === 0 && currentPage > 1) {
+                // Last item on page deleted and not on first page - go back
                 dispatch(setCurrentPage(currentPage - 1));
             } else {
-                // Refresh the current page
-                if (isSearchMode) {
-                    dispatch(searchProducts({ query: debouncedQuery.trim(), token: authToken }));
-                } else {
-                    const offset = (currentPage - 1) * limit;
-                    dispatch(
-                        getProducts({
-                            offset,
-                            limit,
-                            categoryId: selectedCategory ?? undefined,
-                            token: authToken,
-                        })
-                    );
-                }
+                // Refresh current page
+                refreshProducts();
             }
 
             setToDelete(null);
@@ -99,19 +102,17 @@ const ProductsPage: React.FC = () => {
     const handleCategorySelect = (id: string | null) => {
         setSelectedCategory(id);
         setShowMobileSidebar(false);
-        // Clear search when selecting category
-        setQuery('');
+        setQuery(''); // Clear search when selecting category
     };
 
     const handlePageChange = (page: number) => {
         dispatch(setCurrentPage(page));
-        // Scroll to top when page changes
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // Calculate if pagination should be shown
-    const showPagination = !isSearchMode && total > limit;
-    // const totalPages = Math.ceil(total / limit);
+    // Calculate pagination visibility
+    const totalPages = Math.ceil(total / limit);
+    const showPagination = !isSearchMode && (hasMore || totalPages > 1);
 
     return (
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-4 lg:p-6 min-h-screen">
@@ -130,12 +131,15 @@ const ProductsPage: React.FC = () => {
             <div className={`
                 ${showMobileSidebar ? 'fixed inset-0 z-40 bg-black/50' : 'hidden'} 
                 lg:relative lg:block
-            `}>
-                <div className={`
-                    ${showMobileSidebar ? 'fixed left-0 top-0 h-full w-80 max-w-[80vw] z-50' : 'relative w-full'}
-                    bg-white p-4 lg:p-0 transition-transform duration-300
-                    ${showMobileSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-                `}>
+            `} onClick={() => setShowMobileSidebar(false)}>
+                <div 
+                    className={`
+                        ${showMobileSidebar ? 'fixed left-0 top-0 h-full w-80 max-w-[80vw] z-50' : 'relative w-full'}
+                        bg-white p-4 lg:p-0 transition-transform duration-300
+                        ${showMobileSidebar ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+                    `}
+                    onClick={(e) => e.stopPropagation()}
+                >
                     <div className="flex items-center justify-between lg:hidden mb-4 pt-16">
                         <h2 className="text-lg font-semibold">Filters</h2>
                         <button
@@ -174,7 +178,8 @@ const ProductsPage: React.FC = () => {
                             {query && (
                                 <button
                                     onClick={() => setQuery('')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    aria-label="Clear search"
                                 >
                                     <FiX size={20} />
                                 </button>
@@ -196,7 +201,7 @@ const ProductsPage: React.FC = () => {
                         </span>
                         <button
                             onClick={() => setQuery('')}
-                            className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
+                            className="text-blue-600 hover:text-blue-800 font-semibold"
                         >
                             Clear
                         </button>
@@ -248,7 +253,7 @@ const ProductsPage: React.FC = () => {
                             ))}
                         </div>
 
-                        {/* Pagination - Only show in normal mode (not search) */}
+                        {/* Pagination */}
                         {showPagination && (
                             <div className="mt-6 lg:mt-8 flex justify-center">
                                 <Pagination
@@ -260,7 +265,7 @@ const ProductsPage: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Results info for non-paginated view */}
+                        {/* Results info for single page */}
                         {!showPagination && !isSearchMode && (
                             <div className="mt-6 text-center text-sm text-gray-600">
                                 Showing {products.length} product{products.length !== 1 ? 's' : ''}

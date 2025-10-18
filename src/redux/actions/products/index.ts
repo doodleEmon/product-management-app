@@ -1,7 +1,6 @@
 import { Product, ProductFormData } from '@/types/products';
 import { apiCall } from "@/services/api";
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getErrorMessage } from '@/utils/errorHandler';
 
 // Get all products with pagination and filtering
 export const getProducts = createAsyncThunk(
@@ -16,7 +15,7 @@ export const getProducts = createAsyncThunk(
         limit?: number;
         categoryId?: string;
         token: string
-    }, { rejectWithValue }) => {
+    }, thunkAPI) => {
         try {
             const params = new URLSearchParams();
             params.append('offset', offset.toString());
@@ -24,9 +23,16 @@ export const getProducts = createAsyncThunk(
             if (categoryId) params.append('categoryId', categoryId);
 
             const response = await apiCall<Product[]>(`/products?${params}`, "GET", undefined, token);
-            return response;
-        } catch (error: unknown) {
-            return rejectWithValue(getErrorMessage(error) || 'Failed to fetch products');
+            
+            // Return both products and metadata
+            return {
+                products: response,
+                hasMore: response.length === limit,
+                offset,
+                limit
+            };
+        } catch (error: any) {
+            return thunkAPI.rejectWithValue(error.message || 'Failed to fetch products');
         }
     }
 );
@@ -40,17 +46,17 @@ export const createProduct = createAsyncThunk(
     }: {
         productsData: ProductFormData;
         token: string
-    }, { rejectWithValue }) => {
+    }, thunkAPI) => {
         try {
             const response = await apiCall<Product>("/products", "POST", productsData, token);
             return response;
-        } catch (error: unknown) {
-            return rejectWithValue(getErrorMessage(error) || 'Failed to create product');
+        } catch (error: any) {
+            return thunkAPI.rejectWithValue(error.message || 'Failed to create product');
         }
     }
 );
 
-// Search products by name - FIXED ENDPOINT
+// Search products by name
 export const searchProducts = createAsyncThunk(
     'products/search',
     async ({
@@ -59,17 +65,17 @@ export const searchProducts = createAsyncThunk(
     }: {
         query: string;
         token: string
-    }, { rejectWithValue }) => {
+    }, thunkAPI) => {
         try {
             const response = await apiCall<Product[]>(
-                `/products/search?searchedText=${encodeURIComponent(query)}`,
-                "GET",
-                undefined,
+                `/products/search?searchedText=${encodeURIComponent(query)}`, 
+                "GET", 
+                undefined, 
                 token
             );
             return response;
-        } catch (error: unknown) {
-            return rejectWithValue(getErrorMessage(error) || 'Search failed');
+        } catch (error: any) {
+            return thunkAPI.rejectWithValue(error.message || 'Search failed');
         }
     }
 );
@@ -83,12 +89,12 @@ export const getProductBySlug = createAsyncThunk(
     }: {
         slug: string;
         token: string
-    }, { rejectWithValue }) => {
+    }, thunkAPI) => {
         try {
             const response = await apiCall<Product>(`/products/${slug}`, "GET", undefined, token);
             return response;
-        } catch (error: unknown) {
-            return rejectWithValue(getErrorMessage(error) || 'Failed to fetch product');
+        } catch (error: any) {
+            return thunkAPI.rejectWithValue(error.message || 'Failed to fetch product');
         }
     }
 );
@@ -104,12 +110,12 @@ export const updateProduct = createAsyncThunk(
         id: string;
         data: Partial<Product>;
         token: string
-    }, { rejectWithValue }) => {
+    }, thunkAPI) => {
         try {
             const response = await apiCall<Product>(`/products/${id}`, "PUT", data, token);
             return response;
-        } catch (error: unknown) {
-            return rejectWithValue(getErrorMessage(error) || 'Failed to update product');
+        } catch (error: any) {
+            return thunkAPI.rejectWithValue(error.message || 'Failed to update product');
         }
     }
 );
@@ -123,12 +129,12 @@ export const deleteProduct = createAsyncThunk(
     }: {
         id: string;
         token: string
-    }, { rejectWithValue }) => {
+    }, thunkAPI) => {
         try {
             await apiCall(`/products/${id}`, "DELETE", undefined, token);
             return id;
-        } catch (error: unknown) {
-            return rejectWithValue(getErrorMessage(error) || 'Failed to delete product.');
+        } catch (error: any) {
+            return thunkAPI.rejectWithValue(error.message || 'Failed to delete product');
         }
     }
 );

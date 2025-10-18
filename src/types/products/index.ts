@@ -29,6 +29,7 @@ export interface ProductState {
     currentPage: number;
     total: number;
     limit: number;
+    hasMore: boolean,
 }
 
 export interface ProductFormData {

@@ -31,7 +31,7 @@ const Pagination: React.FC<PaginationProps> = ({
 
     const halfVisible = Math.floor(maxVisiblePages / 2);
     let startPage = Math.max(1, currentPage - halfVisible);
-    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
 
     // Adjust if we're near the end
     if (endPage - startPage < maxVisiblePages - 1) {
@@ -51,7 +51,7 @@ const Pagination: React.FC<PaginationProps> = ({
       <button
         disabled={currentPage === 1}
         onClick={() => onPageChange(currentPage - 1)}
-        className="px-4 py-2 border rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 disabled:hover:bg-transparent cursor-pointer"
+        className="px-4 py-2 border rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 disabled:hover:bg-transparent"
       >
         Prev
       </button>
@@ -61,7 +61,7 @@ const Pagination: React.FC<PaginationProps> = ({
         <>
           <button
             onClick={() => onPageChange(1)}
-            className="px-4 py-2 border rounded-lg font-medium hover:bg-gray-100 transition-colors cursor-pointer"
+            className="px-4 py-2 border rounded-lg font-medium hover:bg-gray-100 transition-colors"
           >
             1
           </button>
@@ -76,7 +76,7 @@ const Pagination: React.FC<PaginationProps> = ({
         <button
           key={page}
           onClick={() => onPageChange(page)}
-          className={`px-4 py-2 border rounded-lg font-medium transition-colors cursor-pointer ${
+          className={`px-4 py-2 border rounded-lg font-medium transition-colors ${
             page === currentPage
               ? 'bg-[#4E6E5D] text-white border-[#4E6E5D]'
               : 'hover:bg-gray-100'
@@ -94,7 +94,7 @@ const Pagination: React.FC<PaginationProps> = ({
           )}
           <button
             onClick={() => onPageChange(totalPages)}
-            className="px-4 py-2 border rounded-lg font-medium hover:bg-gray-100 transition-colors cursor-pointer"
+            className="px-4 py-2 border rounded-lg font-medium hover:bg-gray-100 transition-colors"
           >
             {totalPages}
           </button>
@@ -105,7 +105,7 @@ const Pagination: React.FC<PaginationProps> = ({
       <button
         disabled={currentPage === totalPages}
         onClick={() => onPageChange(currentPage + 1)}
-        className="px-4 py-2 border rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 disabled:hover:bg-transparent cursor-pointer"
+        className="px-4 py-2 border rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 disabled:hover:bg-transparent"
       >
         Next
       </button>
