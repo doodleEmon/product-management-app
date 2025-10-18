@@ -178,7 +178,7 @@ const ProductsPage: React.FC = () => {
                             {query && (
                                 <button
                                     onClick={() => setQuery('')}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
                                     aria-label="Clear search"
                                 >
                                     <FiX size={20} />
@@ -201,7 +201,7 @@ const ProductsPage: React.FC = () => {
                         </span>
                         <button
                             onClick={() => setQuery('')}
-                            className="text-blue-600 hover:text-blue-800 font-semibold"
+                            className="text-blue-600 hover:text-blue-800 font-semibold cursor-pointer"
                         >
                             Clear
                         </button>

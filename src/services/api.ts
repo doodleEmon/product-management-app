@@ -5,7 +5,7 @@ import { baseUrl } from "@/constants";
 export async function apiCall<T>(
     endpoint: string,
     method: "GET" | "POST" | "PUT" | "DELETE",
-    body?: unknown, // Changed from any to unknown
+    body?: unknown,
     token?: string
 ): Promise<T> {
 

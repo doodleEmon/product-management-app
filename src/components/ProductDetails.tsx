@@ -122,7 +122,7 @@ export function ProductDetails() {
                                     <button
                                         key={index}
                                         onClick={() => setSelectedImage(img)}
-                                        className={`relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all ${
+                                        className={`relative flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 transition-all cursor-pointer ${
                                             selectedImage === img
                                                 ? 'border-blue-600'
                                                 : 'border-gray-200 hover:border-gray-300'
