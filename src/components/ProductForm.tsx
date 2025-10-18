@@ -75,6 +75,7 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
             }
         } catch (error) {
             // Error is already handled in the hook, just show toast
+            console.error(error);
             toast.error(uploadError || 'Failed to upload images. Please try again.');
         }
     };
@@ -98,7 +99,7 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
     };
 
     // Fixed validation function
-    const validateField = (name: string, value: any): string => {
+    const validateField = (name: string, value: string | number | string[]): string => {
         switch (name) {
             case 'name':
                 const nameStr = String(value || '');
@@ -253,7 +254,17 @@ export default function ProductForm({ product, onSuccess }: ProductFormProps) {
                 toast.error(errorMessage);
             }
         } catch (error) {
-            toast.error('An unexpected error occurred!');
+            let message = 'An unexpected error occurred!';
+
+            if (error instanceof Error) {
+                message = error.message;
+            } else if (typeof error === 'string') {
+                message = error;
+            } else if (typeof (error as any)?.response?.data?.message === 'string') {
+                message = (error as any).response.data.message;
+            }
+
+            toast.error(message);
         }
     };
 

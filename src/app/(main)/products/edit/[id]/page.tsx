@@ -20,7 +20,7 @@ export default function EditProductPage() {
     if (products.length === 0) {
       dispatch(getProducts({ token: authToken as string }));
     }
-  }, [dispatch, products.length]);
+  }, [dispatch, authToken, products.length]);
 
   const product = products.find(p => p.id === id);
 

@@ -54,7 +54,7 @@ const ProductsPage: React.FC = () => {
         if (currentPage !== 1) {
             dispatch(setCurrentPage(1));
         }
-    }, [selectedCategory, debouncedQuery, dispatch]);
+    }, [selectedCategory, debouncedQuery, dispatch, currentPage]);
 
     const onConfirmDelete = async () => {
         if (!toDelete || !authToken) return;
@@ -111,7 +111,7 @@ const ProductsPage: React.FC = () => {
 
     // Calculate if pagination should be shown
     const showPagination = !isSearchMode && total > limit;
-    const totalPages = Math.ceil(total / limit);
+    // const totalPages = Math.ceil(total / limit);
 
     return (
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6 p-4 lg:p-6 min-h-screen">
